@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  grist:
+    image: gristlabs/grist:latest
+    container_name: grist-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8484}:8484"
+    environment:
+      # Essential configuration
+      - GRIST_SESSION_SECRET=${GRIST_SESSION_SECRET}
+      - GRIST_DEFAULT_EMAIL=${GRIST_DEFAULT_EMAIL}
+
+      # Server configuration
+      - PORT=${PORT:-8484}
+      - GRIST_DOMAIN=${GRIST_DOMAIN:-localhost}
+
+      # SQLite is used by default - no additional database config needed
+      # Database files will be stored in /persist volume
+
+      # Optional: Single-port mode (recommended for production)
+      - GRIST_SINGLE_PORT=true
+
+      # Optional: Support for plugins
+      - GRIST_SANDBOX_FLAVOR=${GRIST_SANDBOX_FLAVOR:-gvisor}
+
+    volumes:
+      # Persistent storage for SQLite databases and user data
+      - ./persist:/persist
+
+    networks:
+      - grist-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8484"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  grist-network:
+    driver: bridge
+
+volumes:
+  persist:
+    driver: local
