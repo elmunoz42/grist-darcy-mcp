@@ -1,0 +1,24 @@
+# Environment variables
+.env
+
+# Persistent data directory
+persist/
+
+# Docker volumes
+*.sqlite3
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
