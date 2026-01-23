@@ -18,7 +18,7 @@ This deployment uses:
 
 - AWS EC2 instance (t2.micro or larger)
 - Ubuntu 22.04 LTS
-- Security group with ports 22 (SSH), 80 (HTTP), 443 (HTTPS), 8484 (Grist) open
+- Security group with ports 22 (SSH), 80 (HTTP), 443 (HTTPS), cat ~/.ssh/github_deploy_key.pub (Grist) open
 - SSH key pair for EC2 access
 - (Optional) Domain name for custom URL
 

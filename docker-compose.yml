@@ -22,6 +22,10 @@ services:
       # Optional: Single-port mode (recommended for production)
       - GRIST_SINGLE_PORT=true
 
+      # Force login - require authentication to access
+      - GRIST_FORCE_LOGIN=true
+      - GRIST_ANON_PLAYGROUND=false
+
       # Optional: Support for plugins
       - GRIST_SANDBOX_FLAVOR=${GRIST_SANDBOX_FLAVOR:-gvisor}
 
