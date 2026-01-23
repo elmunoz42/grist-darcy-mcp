@@ -5,6 +5,7 @@ Provides tool registry and execution for Grist data management tools.
 Implements operations for listing tables and CRUD operations on records.
 """
 
+import json
 from typing import Dict, Any, List, Optional
 from grist_client import (
     make_grist_request,
@@ -119,6 +120,13 @@ async def grist_create_records(arguments: Dict[str, Any]) -> Dict[str, Any]:
     # Get parameters
     table_id = arguments.get("table_id")
     records = arguments.get("records")
+    
+    # Parse records if it's a JSON string (common issue with some MCP clients)
+    if isinstance(records, str):
+        try:
+            records = json.loads(records)
+        except (json.JSONDecodeError, TypeError) as e:
+            raise ValueError(f"records parameter is a string but not valid JSON: {e}")
 
     # Validate table_id is provided
     if not table_id:
@@ -175,6 +183,13 @@ async def grist_update_records(arguments: Dict[str, Any]) -> Dict[str, Any]:
     # Get parameters
     table_id = arguments.get("table_id")
     records = arguments.get("records")
+    
+    # Parse records if it's a JSON string (common issue with some MCP clients)
+    if isinstance(records, str):
+        try:
+            records = json.loads(records)
+        except (json.JSONDecodeError, TypeError) as e:
+            raise ValueError(f"records parameter is a string but not valid JSON: {e}")
 
     # Validate table_id is provided
     if not table_id:
@@ -227,6 +242,13 @@ async def grist_delete_records(arguments: Dict[str, Any]) -> Dict[str, Any]:
     # Get parameters
     table_id = arguments.get("table_id")
     record_ids = arguments.get("record_ids")
+    
+    # Parse record_ids if it's a JSON string (common issue with some MCP clients)
+    if isinstance(record_ids, str):
+        try:
+            record_ids = json.loads(record_ids)
+        except (json.JSONDecodeError, TypeError) as e:
+            raise ValueError(f"record_ids parameter is a string but not valid JSON: {e}")
 
     # Validate table_id is provided
     if not table_id:
