@@ -27,7 +27,11 @@ Set required variables:
 - `MCP_AUTH_TOKEN` - Generate with `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`
 - `GRIST_API_URL` - Your Grist instance URL (default: https://docs.getgrist.com)
 - `GRIST_API_KEY` - From Grist Profile Settings → API
-- `GRIST_DOC_ID` - From document URL
+- `GRIST_DOC_ID` - Default document ID from document URL
+
+Optional for multi-document mode:
+- `GRIST_ALLOWED_DOCS_JSON` - JSON array allowlist of docs, e.g.
+  - `[{"id":"docA123","name":"Demo Sales"},{"id":"docB456","name":"Demo Ops"}]`
 
 ### 4. Test Connection
 ```bash
@@ -46,7 +50,11 @@ Server runs at `http://localhost:8001`
 
 ## Available Tools
 
+- `grist_list_docs` - List documents available to the MCP instance
+- `grist_set_context` - Set active document context
+- `grist_get_context` - Get active/default document context
 - `grist_list_tables` - List all tables
+- `grist_list_pages` - List page-like table entries
 - `grist_list_records` - Get records from a table
 - `grist_create_records` - Add new records
 - `grist_update_records` - Update existing records

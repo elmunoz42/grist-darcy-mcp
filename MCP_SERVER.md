@@ -74,6 +74,8 @@ nano .env  # Edit with your credentials
 GRIST_API_URL=https://docs.getgrist.com  # or your self-hosted URL
 GRIST_API_KEY=your_grist_api_key_here
 GRIST_DOC_ID=your_document_id_here
+# Optional: Multi-document allowlist (JSON array)
+# GRIST_ALLOWED_DOCS_JSON=[{"id":"docA123","name":"Demo Sales"},{"id":"docB456","name":"Demo Ops"}]
 
 # MCP Server Configuration
 MCP_SERVER_HOST=127.0.0.1  # localhost for dev

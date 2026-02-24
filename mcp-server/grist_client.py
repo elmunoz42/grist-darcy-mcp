@@ -6,8 +6,11 @@ Handles Grist API key authentication, error handling, and response transformatio
 """
 
 import os
+import json
 import requests
 from typing import Dict, Any, Optional, List
+
+_ACTIVE_CONTEXT_DOC_ID: Optional[str] = None
 
 
 def get_grist_auth_header() -> Dict[str, str]:
@@ -30,11 +33,95 @@ def get_grist_auth_header() -> Dict[str, str]:
     return {"Authorization": f"Bearer {api_key}"}
 
 
+def get_allowed_docs() -> List[Dict[str, str]]:
+    """
+    Read optional allowlist from GRIST_ALLOWED_DOCS_JSON.
+
+    Expected JSON:
+      [{"id": "docA", "name": "Demo A"}, {"id": "docB", "name": "Demo B"}]
+    """
+    raw = os.getenv("GRIST_ALLOWED_DOCS_JSON", "").strip()
+    if not raw:
+        return []
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"GRIST_ALLOWED_DOCS_JSON is not valid JSON: {e}")
+
+    if not isinstance(parsed, list):
+        raise ValueError("GRIST_ALLOWED_DOCS_JSON must be a JSON array")
+
+    docs: List[Dict[str, str]] = []
+    for item in parsed:
+        if not isinstance(item, dict):
+            raise ValueError("GRIST_ALLOWED_DOCS_JSON items must be objects")
+        doc_id = item.get("id")
+        if not isinstance(doc_id, str) or not doc_id.strip():
+            raise ValueError("Each GRIST_ALLOWED_DOCS_JSON item must include a non-empty string 'id'")
+        name = item.get("name", doc_id)
+        if not isinstance(name, str) or not name.strip():
+            name = doc_id
+        docs.append({"id": doc_id.strip(), "name": name.strip()})
+
+    return docs
+
+
+def get_allowed_doc_ids() -> List[str]:
+    """Return allowlisted document IDs from GRIST_ALLOWED_DOCS_JSON."""
+    return [doc["id"] for doc in get_allowed_docs()]
+
+
+def get_default_doc_id() -> str:
+    """Return default document ID from environment."""
+    return os.getenv("GRIST_DOC_ID", "").strip()
+
+
+def get_active_context_doc_id() -> Optional[str]:
+    """Return active context document ID if set."""
+    return _ACTIVE_CONTEXT_DOC_ID
+
+
+def resolve_doc_id(request_doc_id: Optional[str] = None) -> str:
+    """
+    Resolve effective doc ID using precedence:
+    request doc_id > active context doc_id > GRIST_DOC_ID.
+    """
+    global _ACTIVE_CONTEXT_DOC_ID
+
+    request_doc = request_doc_id.strip() if isinstance(request_doc_id, str) else None
+    context_doc = _ACTIVE_CONTEXT_DOC_ID.strip() if isinstance(_ACTIVE_CONTEXT_DOC_ID, str) else None
+    default_doc = get_default_doc_id()
+
+    effective_doc = request_doc or context_doc or default_doc
+    if not effective_doc:
+        raise ValueError("GRIST_DOC_ID environment variable is not set and no doc_id was provided")
+
+    allowed_ids = set(get_allowed_doc_ids())
+    if allowed_ids and effective_doc not in allowed_ids:
+        raise ValueError("doc_id is not allowed")
+
+    return effective_doc
+
+
+def set_active_context_doc_id(doc_id: str) -> str:
+    """Set active context document ID after validation."""
+    global _ACTIVE_CONTEXT_DOC_ID
+
+    if not isinstance(doc_id, str) or not doc_id.strip():
+        raise ValueError("doc_id is required")
+
+    resolved = resolve_doc_id(doc_id.strip())
+    _ACTIVE_CONTEXT_DOC_ID = resolved
+    return _ACTIVE_CONTEXT_DOC_ID
+
+
 async def make_grist_request(
     method: str,
     endpoint: str,
     data: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None,
+    doc_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Make authenticated request to Grist REST API.
@@ -57,10 +144,7 @@ async def make_grist_request(
                                           data={'records': [{'fields': {...}}]})
     """
     grist_api_url = os.getenv("GRIST_API_URL", "https://docs.getgrist.com")
-    grist_doc_id = os.getenv("GRIST_DOC_ID", "")
-
-    if not grist_doc_id:
-        raise ValueError("GRIST_DOC_ID environment variable is not set")
+    grist_doc_id = resolve_doc_id(doc_id)
 
     # Build full URL
     base_url = grist_api_url.rstrip('/')

@@ -88,7 +88,11 @@ async def root_get():
             "description": "Model Context Protocol server for Grist table and record management"
         },
         "available_tools": [
+            "grist_list_docs",
+            "grist_set_context",
+            "grist_get_context",
             "grist_list_tables",
+            "grist_list_pages",
             "grist_list_records",
             "grist_create_records",
             "grist_update_records",
