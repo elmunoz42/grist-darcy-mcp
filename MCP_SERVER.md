@@ -295,15 +295,99 @@ Delete records from a table.
 
 ## Production Deployment
 
-See **[EC2_DEPLOYMENT.md](EC2_DEPLOYMENT.md)** for deploying both Grist and the MCP server to AWS EC2.
+### EC2 Deployment Steps
 
-Quick deployment overview:
-1. Deploy Grist instance (Docker or self-hosted)
-2. Deploy MCP server on same EC2 or separate instance
-3. Configure `.env` with production values
-4. Setup systemd service for auto-start
-5. Configure Nginx reverse proxy + HTTPS
-6. Integrate with DarcyIQ
+1. **Pull code to EC2**
+   ```bash
+   cd ~/grist-sqlite-ec2
+   git pull origin main
+   ```
+
+2. **Set up Python environment**
+   ```bash
+   cd mcp-server
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Configure environment**
+   ```bash
+   cp .env.example .env
+   nano .env  # Add your production credentials
+   ```
+
+4. **Create systemd service** (recommended for production)
+   ```bash
+   sudo nano /etc/systemd/system/grist-mcp-server.service
+   ```
+   
+   Paste this configuration:
+   ```ini
+   [Unit]
+   Description=Grist MCP Server
+   After=network.target
+   
+   [Service]
+   Type=simple
+   User=ubuntu
+   WorkingDirectory=/home/ubuntu/grist-sqlite-ec2/mcp-server
+   Environment="PATH=/home/ubuntu/grist-sqlite-ec2/mcp-server/venv/bin:/usr/bin"
+   ExecStart=/home/ubuntu/grist-sqlite-ec2/mcp-server/venv/bin/python3 server.py
+   Restart=always
+   RestartSec=10
+   StandardOutput=append:/home/ubuntu/grist-sqlite-ec2/mcp-server/server.log
+   StandardError=append:/home/ubuntu/grist-sqlite-ec2/mcp-server/server.log
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+5. **Enable and start the service**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable grist-mcp-server
+   sudo systemctl start grist-mcp-server
+   sudo systemctl status grist-mcp-server
+   ```
+
+6. **Manage the service**
+   ```bash
+   # Restart after code updates
+   sudo systemctl restart grist-mcp-server
+   
+   # Check status
+   sudo systemctl status grist-mcp-server
+   
+   # View logs
+   journalctl -u grist-mcp-server -f
+   # or
+   tail -f /home/ubuntu/grist-sqlite-ec2/mcp-server/server.log
+   
+   # Stop service
+   sudo systemctl stop grist-mcp-server
+   ```
+
+### Alternative: Manual Background Process (Not Recommended)
+
+If you don't want to set up systemd, you can run with nohup:
+```bash
+cd /home/ubuntu/grist-sqlite-ec2/mcp-server
+source venv/bin/activate
+nohup python3 server.py > server.log 2>&1 &
+```
+
+**Note:** This won't auto-restart on crashes or reboot. Use systemd for production.
+
+### Production Checklist
+- ✅ Deploy Grist instance (Docker or self-hosted)
+- ✅ Deploy MCP server on same EC2 or separate instance
+- ✅ Configure `.env` with production values
+- ✅ Setup systemd service for auto-start
+- ✅ Configure Nginx reverse proxy + HTTPS (optional)
+- ✅ Integrate with DarcyIQ
+
+See **[EC2_DEPLOYMENT.md](EC2_DEPLOYMENT.md)** for full Grist deployment details.
 
 ---
 

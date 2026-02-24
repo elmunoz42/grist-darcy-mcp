@@ -48,7 +48,8 @@ SQLite databases created in `/persist` directory:
 
 - AWS EC2 instance (Ubuntu 22.04 LTS recommended)
 - Docker and Docker Compose installed
-- Ports open: 22 (SSH), 8484 (Grist), 80/443 (HTTP/HTTPS optional)
+- Ports open: 22 (SSH), 80/443 (HTTP/HTTPS)
+- For hardened deployments, keep `8484` closed publicly and route only through Nginx.
 
 ---
 
@@ -124,7 +125,7 @@ nano .env  # Configure values
 docker compose up -d
 
 # Access
-http://your-ec2-public-ip:8484
+https://your-domain
 ```
 
 ---
@@ -258,7 +259,7 @@ curl http://localhost:8484
 ```
 
 **If works locally but not remotely:**
-- Check EC2 Security Group allows port 8484
+- Check EC2 Security Group allows ports 80/443
 - Check firewall: `sudo ufw status`
 - Verify `GRIST_DOMAIN` matches your access URL
 
@@ -300,7 +301,8 @@ docker stats grist-app
 ### Firewall Configuration
 ```bash
 sudo ufw allow 22/tcp    # SSH only
-sudo ufw allow 8484/tcp  # Grist (restrict to your IP in production)
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
 sudo ufw enable
 ```
 

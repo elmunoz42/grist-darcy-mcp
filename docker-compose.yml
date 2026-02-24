@@ -6,7 +6,8 @@ services:
     container_name: grist-app
     restart: unless-stopped
     ports:
-      - "${PORT:-8484}:8484"
+      # Bind only to loopback so Grist is reachable via local reverse proxy, not public internet
+      - "127.0.0.1:${PORT:-8484}:8484"
     environment:
       # Essential configuration
       - GRIST_SESSION_SECRET=${GRIST_SESSION_SECRET}

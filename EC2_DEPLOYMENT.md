@@ -18,7 +18,8 @@ This deployment uses:
 
 - AWS EC2 instance (t2.micro or larger)
 - Ubuntu 22.04 LTS
-- Security group with ports 22 (SSH), 80 (HTTP), 443 (HTTPS), cat ~/.ssh/github_deploy_key.pub (Grist) open
+- Security group with ports 22 (SSH), 80 (HTTP), 443 (HTTPS) open
+- Keep port `8484` closed publicly for hardened deployments (proxy through Nginx only)
 - SSH key pair for EC2 access
 - (Optional) Domain name for custom URL
 
@@ -39,7 +40,7 @@ This deployment uses:
    - SSH (22): Your IP
    - HTTP (80): 0.0.0.0/0
    - HTTPS (443): 0.0.0.0/0
-   - Custom TCP (8484): 0.0.0.0/0 (or your IP for testing)
+   - Do not open TCP 8484 publicly (Grist should be reachable only via localhost/Nginx)
 4. **Storage**: 8GB minimum, 20GB recommended
 5. Click **Launch Instance**
 
@@ -190,7 +191,7 @@ docker compose ps
 Expected output:
 ```
 NAME        IMAGE                    STATUS        PORTS
-grist-app   gristlabs/grist:latest   Up X minutes  0.0.0.0:8484->8484/tcp
+grist-app   gristlabs/grist:latest   Up X minutes  127.0.0.1:8484->8484/tcp
 ```
 
 ### Check Logs
@@ -208,7 +209,6 @@ Press `Ctrl+C` to exit logs.
 sudo ufw allow 22/tcp    # SSH
 sudo ufw allow 80/tcp    # HTTP
 sudo ufw allow 443/tcp   # HTTPS
-sudo ufw allow 8484/tcp  # Grist
 sudo ufw enable
 sudo ufw status
 ```
@@ -224,11 +224,11 @@ curl http://localhost:8484
 
 ### From Your Local Machine
 ```bash
-curl http://your-ec2-public-ip:8484
+curl -I https://grist.yourdomain.com
 ```
 
 ### In Browser
-Open: `http://your-ec2-public-ip:8484`
+Open: `https://grist.yourdomain.com`
 
 You should see the Grist login/signup page.
 
@@ -236,7 +236,7 @@ You should see the Grist login/signup page.
 
 ## Step 10: Initial Setup
 
-1. Open Grist in browser: `http://your-ec2-public-ip:8484`
+1. Open Grist in browser: `https://grist.yourdomain.com`
 2. Create account using the email from `GRIST_DEFAULT_EMAIL`
 3. You're automatically the admin user
 4. Start creating documents!
@@ -400,7 +400,7 @@ chmod -R 755 ~/grist-sqlite-ec2/persist
 ```
 
 ### Can't Access from Browser
-- Verify EC2 Security Group allows port 8484
+- Verify EC2 Security Group allows ports 80/443 and does not expose 8484 publicly
 - Check UFW firewall: `sudo ufw status`
 - Test locally first: `curl http://localhost:8484`
 
@@ -595,7 +595,6 @@ docker compose down        # Stop
 docker compose up -d       # Start
 
 # Access Grist
-http://your-ec2-ip:8484
 https://grist.yourdomain.com  # If custom domain
 
 # Health check

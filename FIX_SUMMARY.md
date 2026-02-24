@@ -32,17 +32,54 @@ The server now automatically detects if parameters are JSON strings and parses t
 
 ## Next Steps
 
-### 1. Restart Your MCP Server
+### 1. Deploy to EC2
 
-If running as a service:
+**Pull the changes:**
 ```bash
-sudo systemctl restart grist-mcp-server
+cd ~/grist-sqlite-ec2
+git pull origin main
 ```
 
-If running manually:
+**Set up Python environment:**
 ```bash
-cd /home/elmunoz42/innovative/grist/grist-sqlite-ec2/mcp-server
-python3 server.py
+cd mcp-server
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Create systemd service for production:**
+```bash
+sudo nano /etc/systemd/system/grist-mcp-server.service
+```
+
+Paste this configuration:
+```ini
+[Unit]
+Description=Grist MCP Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/grist-sqlite-ec2/mcp-server
+Environment="PATH=/home/ubuntu/grist-sqlite-ec2/mcp-server/venv/bin:/usr/bin"
+ExecStart=/home/ubuntu/grist-sqlite-ec2/mcp-server/venv/bin/python3 server.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/ubuntu/grist-sqlite-ec2/mcp-server/server.log
+StandardError=append:/home/ubuntu/grist-sqlite-ec2/mcp-server/server.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Enable and start:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable grist-mcp-server
+sudo systemctl start grist-mcp-server
+sudo systemctl status grist-mcp-server
 ```
 
 ### 2. Test with DarcyIQ
